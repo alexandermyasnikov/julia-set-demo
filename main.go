@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"log"
+	"math"
 	"math/rand"
 	"os"
 
@@ -19,7 +20,7 @@ const (
 )
 
 type Point struct {
-	X, Y float32
+	X, Y float64
 }
 
 type ImageData struct {
@@ -30,7 +31,7 @@ type Game struct {
 	width  int
 	height int
 
-	x0, y0, dx0, dy0 float32
+	x0, y0, dx0, dy0 float64
 
 	points []Point
 }
@@ -50,7 +51,7 @@ func NewGame(width, height int) *Game {
 }
 func (g *Game) Update() error {
 	if g.points == nil {
-		var x, y float32
+		var x, y float64
 		for range 1000000 {
 			x, y = calc(x, y)
 			g.points = append(g.points, Point{x, y})
@@ -92,15 +93,29 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	msg += fmt.Sprintf("p=(%v,%v) d=(%v,%v)\n", g.x0, g.y0, g.dx0, g.dy0)
 	ebitenutil.DebugPrint(screen, msg)
 
-	x1, y1 := float32(g.width)/2, float32(g.height)/2
-	dx1, dy1 := float32(g.width)/2, float32(g.height/2)
+	x1, y1 := float64(g.width)/2, float64(g.height)/2
+	dx1, dy1 := float64(g.width)/2, float64(g.height/2)
 
-	for i, point := range g.points {
+	m := make(map[[2]int]int, 0)
+
+	for _, point := range g.points {
 		x := int(norm(point.X, g.x0, g.dx0, x1, dx1))
 		y := int(norm(point.Y, g.y0, g.dy0, y1, dy1))
-		iterRatio := float64(i) / float64(len(g.points))
-		r := uint8(255 * iterRatio)
-		g := uint8(80 * iterRatio)
+		m[[2]int{x, y}]++
+	}
+
+	var maxCount int
+	for _, v := range m {
+		maxCount = max(v, maxCount)
+	}
+
+	for p, count := range m {
+		x := p[0]
+		y := p[1]
+
+		iterRatio := math.Pow(float64(count)/float64(maxCount), 0.3)
+		r := uint8(80 * iterRatio)
+		g := uint8(255 * iterRatio)
 		b := uint8(30 * iterRatio)
 		screen.Set(x, y, color.RGBA{r, g, b, 0})
 	}
@@ -120,10 +135,10 @@ func main() {
 	}
 }
 
-func calc(x, y float32) (float32, float32) {
-	var a, b, c, d, e, f float32
+func calc(x, y float64) (float64, float64) {
+	var a, b, c, d, e, f float64
 
-	r := rand.Float32()
+	r := rand.Float64()
 	switch {
 	case r < 0.01:
 		a, b, c, d, e, f = 0, 0, 0, 0.16, 0, 0
@@ -141,7 +156,7 @@ func calc(x, y float32) (float32, float32) {
 	return x1, y1
 }
 
-func norm(x, x0, dx0, x1, dx1 float32) float32 {
+func norm(x, x0, dx0, x1, dx1 float64) float64 {
 	x -= x0
 	x *= dx1 / dx0
 	x += x1
