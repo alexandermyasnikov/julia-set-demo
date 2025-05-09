@@ -15,7 +15,11 @@ import (
 const (
 	screenWidth  = 640
 	screenHeight = 640
-	maxIt        = 128
+)
+
+var (
+	maxIters = 1000
+	cCoeff   = complex(-0.74543, 0.11301)
 )
 
 type Point struct {
@@ -57,7 +61,7 @@ func (g *Game) Update() error {
 				xx := norm(float64(x), float64(g.width)/2, float64(g.width)/2, g.x0, g.dx0)
 				yy := norm(float64(y), float64(g.width)/2, float64(g.width)/2, g.y0, g.dy0)
 
-				col := calc(xx, yy)
+				col := calc(xx, yy, maxIters, cCoeff)
 				g.points = append(g.points, Point{x, y, col})
 			}
 		}
@@ -94,6 +98,10 @@ func (g *Game) Update() error {
 	if inpututil.IsKeyJustPressed(ebiten.KeyU) {
 		g.points = nil
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyT) {
+		// tmp
+		// g.points = nil
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyZ) {
 		os.Exit(1)
 	}
@@ -112,14 +120,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return screenWidth, screenHeight
+	return outsideWidth, outsideHeight
 }
 
 func main() {
 	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
 
-	ebiten.SetWindowSize(screenWidth, screenHeight)
 	ebiten.SetWindowTitle("2d Demo")
+	ebiten.SetWindowSize(screenWidth, screenHeight)
 
 	game := NewGame(screenWidth, screenHeight)
 	if err := ebiten.RunGame(game); err != nil {
@@ -134,10 +142,8 @@ func norm(x, x0, dx0, x1, dx1 float64) float64 {
 	return x
 }
 
-func calc(x, y float64) color.RGBA {
-	c := complex(-0.74543, 0.11301)
+func calc(x, y float64, maxIters int, c complex128) color.RGBA {
 	z := complex(x, y)
-	maxIters := 1000
 
 	for i := range maxIters {
 		if cmplx.Abs(z) > 2 {
