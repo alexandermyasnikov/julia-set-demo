@@ -16,9 +16,10 @@ import (
 )
 
 const (
-	screenWidth  = 640
-	screenHeight = 640
-	maxIters     = 10000
+	screenWidth    = 640
+	screenHeight   = 640
+	maxIters       = 10000
+	scaleSaveImage = 5
 
 	// cCoeff = complex(-0.74543, 0.11301)
 	// cCoeff = complex(-0.8, 0.156)
@@ -120,10 +121,9 @@ func (g *Game) handleInput() {
 }
 
 func saveImage(toCenterX, toCenterY, toScaleX, toScaleY float64, width, height int) error {
-	const scale = 10
 
-	width *= scale
-	height *= scale
+	width *= scaleSaveImage
+	height *= scaleSaveImage
 
 	points := generatePoints(toCenterX, toCenterY, toScaleX, toScaleY, width, height)
 
