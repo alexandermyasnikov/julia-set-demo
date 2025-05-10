@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"log"
 	"math/cmplx"
+	"math/rand"
 	"os"
 	"time"
 
@@ -16,15 +17,20 @@ import (
 )
 
 const (
-	screenWidth    = 640
-	screenHeight   = 640
+	screenWidth    = 1024
+	screenHeight   = 768
 	maxIters       = 10000
 	scaleSaveImage = 5
 
+	animation = true
+)
+
+var (
 	// cCoeff = complex(-0.74543, 0.11301)
 	// cCoeff = complex(-0.8, 0.156)
 	// cCoeff = complex(0.285, 0.01)
-	cCoeff = complex(-0.008, 0.71)
+	// cCoeff = complex(-0.008, 0.71)
+	cCoeff = complex(-0.008, 0.85)
 )
 
 type Point struct {
@@ -63,6 +69,13 @@ func NewGame(width, height int) *Game {
 }
 func (g *Game) Update() error {
 	g.handleInput()
+
+	if animation {
+		r1 := 0.0003 * (2*rand.Float64() - 1)
+		r2 := 0.0003*(2*rand.Float64()-1) - 0.0001
+		cCoeff += complex(r1, r2)
+		g.needsUpdate = true
+	}
 
 	if g.needsUpdate {
 		log.Println("Generating fractal...")
@@ -121,7 +134,6 @@ func (g *Game) handleInput() {
 }
 
 func saveImage(toCenterX, toCenterY, toScaleX, toScaleY float64, width, height int) error {
-
 	width *= scaleSaveImage
 	height *= scaleSaveImage
 
@@ -188,10 +200,10 @@ func computeColor(x, y float64, maxIters int, c complex128) color.RGBA {
 
 	for i := range maxIters {
 		if cmplx.Abs(z) > 2 {
-			r := uint8((1*i + 17) % 255)
-			g := uint8((2*i + 01) % 255)
-			b := uint8((3*i + 01) % 255)
-			return color.RGBA{r, g, b, 255}
+			r := uint8((3*i + 17) % 0xFF)
+			g := uint8((2*i + 01) % 0xFF)
+			b := uint8((1*i + 01) % 0xFF)
+			return color.RGBA{r, g, b, 0xFF}
 		}
 
 		z = z*z + c
@@ -203,7 +215,7 @@ func computeColor(x, y float64, maxIters int, c complex128) color.RGBA {
 func main() {
 	log.SetFlags(log.Lshortfile | log.Lmicroseconds)
 
-	ebiten.SetWindowTitle("2D Fractal Viever - Demo")
+	ebiten.SetWindowTitle("2D Fractal Viever - Demo - amyasnikov.com")
 	ebiten.SetWindowSize(screenWidth, screenHeight)
 
 	game := NewGame(screenWidth, screenHeight)
