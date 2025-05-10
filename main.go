@@ -78,10 +78,10 @@ func (g *Game) Update() error {
 	}
 
 	if g.needsUpdate {
-		log.Println("Generating fractal...")
+		// log.Println("Generating fractal...")
 		g.points = generatePoints(g.CenterX, g.CenterY, g.ScaleX, g.ScaleY, g.width, g.height)
 		g.needsUpdate = false
-		log.Println("Fractal updated.")
+		// log.Println("Fractal updated.")
 	}
 
 	return nil

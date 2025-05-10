@@ -1,4 +1,4 @@
-module gitlab.com/amyasnikov/ebiten-draw
+module github.com/alexandermyasnikov/julia-set-demo
 
 go 1.24.3
 
