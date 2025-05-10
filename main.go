@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"image"
 	"image/color"
+	"image/png"
 	"log"
 	"math/cmplx"
 	"os"
+	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -15,8 +18,12 @@ import (
 const (
 	screenWidth  = 640
 	screenHeight = 640
-	maxIters     = 1000
-	cCoeff       = complex(-0.74543, 0.11301)
+	maxIters     = 10000
+
+	// cCoeff = complex(-0.74543, 0.11301)
+	// cCoeff = complex(-0.8, 0.156)
+	// cCoeff = complex(0.285, 0.01)
+	cCoeff = complex(-0.008, 0.71)
 )
 
 type Point struct {
@@ -58,7 +65,7 @@ func (g *Game) Update() error {
 
 	if g.needsUpdate {
 		log.Println("Generating fractal...")
-		g.generatePoints()
+		g.points = generatePoints(g.CenterX, g.CenterY, g.ScaleX, g.ScaleY, g.width, g.height)
 		g.needsUpdate = false
 		log.Println("Fractal updated.")
 	}
@@ -97,29 +104,64 @@ func (g *Game) handleInput() {
 	if inpututil.IsKeyJustPressed(ebiten.KeyU) {
 		g.needsUpdate = true
 	}
+	if inpututil.IsKeyJustPressed(ebiten.KeyP) {
+		log.Println("Saving image ...")
+		go func() {
+			if err := saveImage(g.CenterX, g.CenterY, g.ScaleX, g.ScaleY, g.width, g.height); err != nil {
+				log.Printf("Failed to save image: %v", err)
+			} else {
+				log.Printf("Image saved")
+			}
+		}()
+	}
 	if inpututil.IsKeyJustPressed(ebiten.KeyZ) {
 		os.Exit(0)
 	}
 }
 
-func (g *Game) generatePoints() {
-	g.points = make([]Point, 0, g.width*g.height)
+func saveImage(toCenterX, toCenterY, toScaleX, toScaleY float64, width, height int) error {
+	const scale = 10
+
+	width *= scale
+	height *= scale
+
+	points := generatePoints(toCenterX, toCenterY, toScaleX, toScaleY, width, height)
+
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+	for _, p := range points {
+		img.Set(p.X, p.Y, p.Color)
+	}
+
+	filename := fmt.Sprintf("/tmp/fractal_%s.png", time.Now().Format("20060102-150405"))
+	file, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	return png.Encode(file, img)
+}
+
+func generatePoints(toCenterX, toCenterY, toScaleX, toScaleY float64, width, height int) []Point {
+	points := make([]Point, 0, width*height)
 
 	var (
-		centerX float64 = float64(g.width) / 2
-		centerY float64 = float64(g.height) / 2
-		scaleX  float64 = float64(g.width) / 2
-		scaleY  float64 = float64(g.height) / 2
+		fromCenterX = float64(width) / 2
+		fromCenterY = float64(height) / 2
+		fromScaleX  = float64(width) / 2
+		fromScaleY  = float64(height) / 2
 	)
 
-	for x := range g.width {
-		for y := range g.height {
-			nx := remapPoint(float64(x), centerX, scaleX, g.CenterX, g.ScaleX)
-			ny := remapPoint(float64(y), centerY, scaleY, g.CenterY, g.ScaleY)
+	for x := range width {
+		for y := range height {
+			nx := remapPoint(float64(x), fromCenterX, fromScaleX, toCenterX, toScaleX)
+			ny := remapPoint(float64(y), fromCenterY, fromScaleY, toCenterY, toScaleY)
 			col := computeColor(nx, ny, maxIters, cCoeff)
-			g.points = append(g.points, Point{x, y, col})
+			points = append(points, Point{x, y, col})
 		}
 	}
+
+	return points
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
@@ -148,7 +190,7 @@ func computeColor(x, y float64, maxIters int, c complex128) color.RGBA {
 		if cmplx.Abs(z) > 2 {
 			r := uint8((1*i + 17) % 255)
 			g := uint8((2*i + 01) % 255)
-			b := uint8((0*i + 01) % 255)
+			b := uint8((3*i + 01) % 255)
 			return color.RGBA{r, g, b, 255}
 		}
 
