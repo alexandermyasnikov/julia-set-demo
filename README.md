@@ -12,6 +12,8 @@
 ![Preview](./images/image2.webp)
 ![Preview](./images/image3.webp)
 
+<iframe width="560" height="315" src="https://youtu.be/xol5e5jsCrY" frameborder="0" allowfullscreen></iframe>
+
 ## ✨ Возможности
 
 - Визуализация множества Жюлиа в реальном времени
